@@ -1,5 +1,23 @@
-<img width="235" height="274" alt="image" src="https://github.com/user-attachments/assets/d25c2e0b-c170-43ad-b54a-012dbc9d0b22" />
+## Download
 
-**Description**
+- [Linux (.deb)](dist/pixel-pet_1.0.0_amd64.deb)
+- [Windows (.exe)](dist/Pixel%20Pet%20Setup%201.0.0.exe)
 
-- This is the your desktop companion for you daily hustle that keeps the mood full on happy everytime. 
+### Linux
+
+```bash
+sudo dpkg -i pixel-pet_1.0.0_amd64.deb
+```
+
+Then open **Pixel Pet** from your app menu.
+
+### Windows
+
+Download **Pixel Pet Setup 1.0.0.exe** and run it.
+
+## Run from source
+
+```bash
+pnpm install
+pnpm start
+```
