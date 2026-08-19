@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      border: none;
+      box-shadow: none;
+    }
+
+    body {
+      position: relative;
+      font-family: monospace;
+      user-select: none;
+    }
+
+    #pet,
+    #pet:hover,
+    #pet:focus,
+    #pet:focus-visible,
+    .cat,
+    .cat:focus {
+      border: none;
+      outline: none;
+      box-shadow: none;
+    }
+
+    #pet {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 160px;
+      height: 140px;
+      image-rendering: pixelated;
+      cursor: grab;
+    }
+
+    #pet.dragging {
+      cursor: grabbing;
+    }
+
+    .cat {
+      display: block;
+      width: 160px;
+      height: 140px;
+      overflow: visible;
+    }
+
+    #head {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      animation: headIdle 4s ease-in-out infinite;
+    }
+
+    #eyes-look {
+      transform-box: fill-box;
+      transform-origin: 50% 50%;
+    }
+
+    #eyes-blink {
+      transform-box: fill-box;
+      transform-origin: 16px 9.5px;
+      animation: blink 3.4s infinite;
+    }
+
+    @keyframes headIdle {
+      0%,
+      100% {
+        transform: rotate(-5deg) translateY(0);
+      }
+
+      22% {
+        transform: rotate(4deg) translateY(-1px);
+      }
+
+      48% {
+        transform: rotate(-3deg) translateY(0);
+      }
+
+      72% {
+        transform: rotate(6deg) translateY(-1.5px);
+      }
+
+      88% {
+        transform: rotate(1deg) translateY(0);
+      }
+    }
+
+    @keyframes blink {
+      0%,
+      84%,
+      91%,
+      93%,
+      100% {
+        transform: scaleY(1);
+      }
+
+      86%,
+      89%,
+      95% {
+        transform: scaleY(0.08);
+      }
+    }
+
+    .jumping {
+      animation: jump 0.45s ease-out;
+    }
+
+    @keyframes jump {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-28px);
+      }
+    }
+
+    #bubble {
+      position: absolute;
+      left: 50%;
+      top: 14px;
+      background: white;
+      color: #222;
+      padding: 5px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -100%);
+    }
+
+    #bubble.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="pet">
+    <svg class="cat" viewBox="0 -2 32 28" width="160" height="140" shape-rendering="crispEdges" overflow="visible" aria-hidden="true">
+      <g id="head">
+        <g id="head-pixels"></g>
+        <g id="eyes-look">
+          <g id="eyes-blink"></g>
+        </g>
+      </g>
+      <g id="anchor"></g>
+    </svg>
+
+    <div id="bubble"></div>
+  </div>
+
+  <script>
+    const palette = {
+      K: "#000000",
+      W: "#FFFFFF",
+      O: "#F39C38",
+      P: "#FB9DA8",
+      B: "#643632",
+      H: "#FFFFFF"
+    };
+
+    const head = [
+      "........KK..............KK......",
+      ".......KOOK............KWWK.....",
+      "......KOPPOK..........KWPWK.....",
+      "......KOPPOK..........KWPWK.....",
+      ".......KOOOKKKKKKKKKKKKWWK......",
+      "........KWWWWWWWWWWWWWWWWK......",
+      ".......KWWWWWWWWWWWWWWWWWWK.....",
+      "......KWWWWWWWWWWWWWWWWWWWWK....",
+      "......KWWWWWWWWWWWWWWWWWWWWK....",
+      "......KWWWWWWWWWWWWWWWWWWWWK....",
+      "......KWWWWWWWWWWWWWWWWWWWWK....",
+      "......KWWWWWWWWWWWWWWWWWWWWK....",
+      "......KWWWPWWWWWWWWWWWPWWWWK....",
+      "......KWWWWWWBWBWBWWWWWWWWWK....",
+      "......KWWWWWWWBWBWWWWWWWWWWK....",
+      ".......KWWWWWWWWWWWWWWWWWK......",
+      "........KWWWWWWWWWWWWWWWK.......",
+      ".........KWWW......WWWK........."
+    ];
+
+    const eyes = [
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "..........HBB......HBB..........",
+      "..........BBB......BBB..........",
+      "..........BBB......BBB..........",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................"
+    ];
+
+    const paws = [
+      "........KK..........KK..........",
+      ".......KWWK........KWWK.........",
+      ".......KWWK........KWWK.........",
+      "....KKKKKKKKKKKKKKKKKKKKKK......"
+    ];
+
+    function paint(group, rows, yOffset = 0) {
+      const ns = "http://www.w3.org/2000/svg";
+
+      rows.forEach((row, y) => {
+        let x = 0;
+
+        while (x < row.length) {
+          const cell = row[x];
+
+          if (cell === "." || !palette[cell]) {
+            x += 1;
+            continue;
+          }
+
+          let width = 1;
+
+          while (x + width < row.length && row[x + width] === cell) {
+            width += 1;
+          }
+
+          const rect = document.createElementNS(ns, "rect");
+          rect.setAttribute("x", String(x));
+          rect.setAttribute("y", String(y + yOffset));
+          rect.setAttribute("width", String(width));
+          rect.setAttribute("height", "1");
+          rect.setAttribute("fill", palette[cell]);
+          group.appendChild(rect);
+
+          x += width;
+        }
+      });
+    }
+
+    paint(document.getElementById("head-pixels"), head);
+    paint(document.getElementById("eyes-blink"), eyes);
+    paint(document.getElementById("anchor"), paws, head.length);
+  </script>
+
+  <script>
+    const pet = document.getElementById("pet");
+    const bubble = document.getElementById("bubble");
+    const eyesLook = document.getElementById("eyes-look");
+
+    const MAX_LOOK = 1.4;
+    const LOOK_RANGE = 220;
+    const LOOK_SMOOTH = 0.22;
+
+    let lookX = 0;
+    let lookY = 0;
+
+    let isDragging = false;
+    let dragMoved = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    const messages = [
+      "meow!",
+      "hello!",
+      "🐾",
+      "I'm bored...",
+      "feed me!",
+      "where am I?",
+      "meow meow",
+      "😺"
+    ];
+
+    function placePet() {
+      const x = Math.max(0, (window.innerWidth - pet.offsetWidth) / 2);
+      const y = Math.max(0, window.innerHeight - pet.offsetHeight);
+      pet.style.left = `${x}px`;
+      pet.style.top = `${y}px`;
+    }
+
+    pet.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+
+      isDragging = true;
+      dragMoved = false;
+      dragStartX = event.screenX;
+      dragStartY = event.screenY;
+
+      pet.classList.add("dragging");
+      pet.setPointerCapture(event.pointerId);
+
+      window.electronAPI.startDrag({
+        x: event.screenX,
+        y: event.screenY
+      });
+    });
+
+    pet.addEventListener("pointermove", (event) => {
+      if (!isDragging) return;
+
+      const dx = Math.abs(event.screenX - dragStartX);
+      const dy = Math.abs(event.screenY - dragStartY);
+
+      if (dx > 4 || dy > 4) {
+        dragMoved = true;
+      }
+    });
+
+    function stopDrag(event, triggerClick) {
+      if (!isDragging) return;
+
+      isDragging = false;
+      pet.classList.remove("dragging");
+
+      if (event && pet.hasPointerCapture(event.pointerId)) {
+        pet.releasePointerCapture(event.pointerId);
+      }
+
+      window.electronAPI.endDrag();
+
+      if (triggerClick && !dragMoved) {
+        jump();
+        say(messages[Math.floor(Math.random() * messages.length)]);
+      }
+    }
+
+    pet.addEventListener("pointerup", (event) => {
+      stopDrag(event, true);
+    });
+
+    pet.addEventListener("pointercancel", (event) => {
+      stopDrag(event, false);
+    });
+
+    function jump() {
+      pet.classList.remove("jumping");
+      void pet.offsetWidth;
+      pet.classList.add("jumping");
+    }
+
+    function say(message) {
+      bubble.textContent = message;
+      bubble.classList.add("show");
+
+      setTimeout(() => {
+        bubble.classList.remove("show");
+      }, 1500);
+    }
+
+    setInterval(() => {
+      if (Math.random() < 0.3) {
+        say(messages[Math.floor(Math.random() * messages.length)]);
+      }
+    }, 5000);
+
+    async function followCursor() {
+      const pointer = await window.electronAPI.getPointer();
+
+      if (pointer) {
+        const { cursor, bounds } = pointer;
+        const svgRect = pet.querySelector(".cat").getBoundingClientRect();
+
+        const eyeScreenX = bounds.x + svgRect.left + svgRect.width * (16 / 32);
+        const eyeScreenY = bounds.y + svgRect.top + svgRect.height * ((9.5 + 2) / 28);
+
+        const dx = cursor.x - eyeScreenX;
+        const dy = cursor.y - eyeScreenY;
+        const dist = Math.hypot(dx, dy) || 1;
+        const amount = Math.min(1, dist / LOOK_RANGE);
+
+        const targetX = (dx / dist) * MAX_LOOK * amount;
+        const targetY = (dy / dist) * MAX_LOOK * amount;
+
+        lookX += (targetX - lookX) * LOOK_SMOOTH;
+        lookY += (targetY - lookY) * LOOK_SMOOTH;
+
+        eyesLook.setAttribute(
+          "transform",
+          `translate(${lookX.toFixed(2)} ${lookY.toFixed(2)})`
+        );
+      }
+
+      requestAnimationFrame(followCursor);
+    }
+
+    placePet();
+    followCursor();
+  </script>
+
+</body>
+</html>

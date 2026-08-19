@@ -1,0 +1,55 @@
+{
+  "name": "pixel-pet",
+  "version": "1.0.0",
+  "description": "A tiny pixel pet for the desktop",
+  "homepage": "https://github.com/sajakshrestha/pixel-pet",
+  "main": "main.js",
+  "author": "Sajak Shrestha",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --linux deb --win nsis --mac dmg",
+    "dist:linux": "electron-builder --linux deb",
+    "dist:win": "electron-builder --win nsis",
+    "dist:mac": "electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "packageManager": "pnpm@11.13.1+sha512.b2fc7683b8a6525414e7d13e1ba28caaddde96bf66ec540bfaeb7e702b81f3e0be4d1f295edf7f9fe0396740a8dce4509c582ddf79891f4543fea32d37645f25",
+  "build": {
+    "appId": "com.pixelpet.app",
+    "productName": "Pixel Pet",
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        "deb"
+      ],
+      "category": "Game",
+      "maintainer": "Sajak Shrestha"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.entertainment"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
+  }
+}
