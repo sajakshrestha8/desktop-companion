@@ -1,3 +1,7 @@
+# Pixel Pet
+
+A tiny desktop kitten that sits on your screen, follows your cursor with its eyes, and can be dragged around.
+
 ## Download
 
 - [Linux (.deb)](dist/pixel-pet_1.0.0_amd64.deb)

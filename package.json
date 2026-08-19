@@ -34,12 +34,17 @@
         "deb"
       ],
       "category": "Game",
-      "maintainer": "Sajak Shrestha"
+      "maintainer": "Sajak Shrestha",
+      "executableName": "pixel-pet"
+    },
+    "deb": {
+      "compression": "gz"
     },
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "signAndEditExecutable": false
     },
     "mac": {
       "target": [

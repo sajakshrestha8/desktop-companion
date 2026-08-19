@@ -38,4 +38,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: pixel-pet-${{ matrix.os }}
-          path: dist/*.{deb,exe,dmg}
+          path: |
+            dist/*.deb
+            dist/*.exe
+            dist/*.dmg
