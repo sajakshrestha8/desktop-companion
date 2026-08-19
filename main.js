@@ -20,6 +20,8 @@ let dragOffsetX = 0;
 let dragOffsetY = 0;
 let dragTimer = null;
 
+console.log(dragTimer)
+
 const WINDOW_WIDTH = 176;
 const WINDOW_HEIGHT = 168;
 const TRAY_ICON_SVG = `
